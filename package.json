@@ -5,7 +5,7 @@
   "main": "DataMLTranspiler.js",
   "scripts": {
     "test": "mocha",
-    "build_module": "node-gyp rebuild"
+    "build_module": "node-gyp rebuild -fexceptions"
   },
   "repository": {
     "type": "git",
