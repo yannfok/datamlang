@@ -1,0 +1,16 @@
+{
+  "name": "datamlang",
+  "version": "1.0.0",
+  "description": "",
+  "main": "DataMLTranspiler.js",
+  "scripts": {
+    "test": "mocha",
+    "install": "node-gyp rebuild"
+  },
+  "author": "Yannick Ascari <yannick.ascari@gmail.com>",
+  "license": "ISC",
+  "gypfile": true,
+  "devDependencies": {
+    "mocha": "^9.0.1"
+  }
+}
