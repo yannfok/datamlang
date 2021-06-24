@@ -11,5 +11,3 @@ module.exports = function DTMLTranspile(code)
 {
     return createObject(code).transpile();
 }
-
-exports.DTMLTranspile = DTMLTranspile;
