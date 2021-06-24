@@ -7,6 +7,10 @@
     "test": "mocha",
     "install": "node-gyp rebuild"
   },
+  "repository": {
+    "type": "git",
+    "url" : "git+https://github.com/yannfok/datamlang.git"
+  },
   "author": "Yannick Ascari <yannick.ascari@gmail.com>",
   "license": "ISC",
   "gypfile": true,
