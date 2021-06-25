@@ -6,31 +6,35 @@
 #define HELLO_TRANSPILER_H
 
 #include <node.h>
+#include <node_api.h>
+#include <nan.h>
 #include <node_object_wrap.h>
 #include <map>
 #include <fstream>
 
-namespace CPPAddOn {
 
-    class Transpiler : public node::ObjectWrap {
-        public:
-            static void Init(v8::Isolate *isolate);
-            static void NewInstance(const v8::FunctionCallbackInfo<v8::Value> &args);
+class Transpiler : public Nan::ObjectWrap {
+public:
+    static NAN_MODULE_INIT(Init);
 
-        private:
-            explicit Transpiler(std::string dataCode);
+private:
+    std::string m_dataCode;
 
-            ~Transpiler() noexcept;
+    explicit Transpiler(std::string dataCode);
 
-            static void New(const v8::FunctionCallbackInfo<v8::Value> &args);
+    ~Transpiler() noexcept;
 
-            static void Parse(const v8::FunctionCallbackInfo<v8::Value> &args);
+    static NAN_METHOD(New);
 
-            static v8::Global<v8::Function> constructor;
+    static NAN_METHOD(GetHandle);
 
-            std::string dataCode;
-    };
+    static NAN_METHOD(Transpile);
 
-}
+    static inline Nan::Persistent<v8::Function> &constructor();
+
+
+};
+
+NODE_MODULE(objectwrapper, Transpiler::Init)
 
 #endif //HELLO_TRANSPILER_H

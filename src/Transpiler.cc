@@ -4,101 +4,74 @@
 
 #include <node.h>
 #include <iostream>
-#include <utility>
+#include <nan.h>
 #include "../include/Transpiler.h"
 #include "../include/Parser.h"
 
-namespace CPPAddOn {
 
-    using node::AddEnvironmentCleanupHook;
-    using v8::Context;
-    using v8::Function;
-    using v8::FunctionCallbackInfo;
-    using v8::FunctionTemplate;
-    using v8::Global;
-    using v8::Isolate;
-    using v8::Local;
-    using v8::Number;
-    using v8::Object;
-    using v8::String;
-    using v8::Value;
+using namespace v8;
+using namespace Nan;
 
-    Global<Function> Transpiler::constructor;
+Transpiler::Transpiler(std::string dataCode) : m_dataCode(std::move(dataCode)) {}
 
-    Transpiler::Transpiler(std::string dataCode) : dataCode(std::move(dataCode)) {}
+void Transpiler::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
+    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
+    tpl->SetClassName(Nan::New("Transpiler").ToLocalChecked());
+    tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-    Transpiler::~Transpiler() noexcept = default;
+    Nan::SetPrototypeMethod(tpl, "getHandle", GetHandle);
+    Nan::SetPrototypeMethod(tpl, "transpile", Transpile);
 
-    void Transpiler::Init(Isolate *isolate) {
-        auto tpl = FunctionTemplate::New(isolate, New);
-        tpl->SetClassName(String::NewFromUtf8(isolate, "Transpiler"));
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
+    constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
+    Nan::Set(target, Nan::New("Transpiler").ToLocalChecked(),
+             Nan::GetFunction(tpl).ToLocalChecked());
+}
 
-        NODE_SET_PROTOTYPE_METHOD(tpl, "transpile", Parse);
+void Transpiler::New(const Nan::FunctionCallbackInfo<v8::Value> &info) {
+    auto *isolate = info.GetIsolate();
 
-        auto currentContext = isolate->GetCurrentContext();
-        constructor.Reset(isolate, tpl->GetFunction(currentContext).ToLocalChecked());
+    if (info.IsConstructCall()) {
+        auto value = info[0]->IsUndefined() ? "" : std::string(*v8::String::Utf8Value(isolate, info[0]));
+        auto *obj = new Transpiler(value);
+        obj->Wrap(info.This());
+        info.GetReturnValue().Set(info.This());
+    } else {
+        const int argc = 1;
+        v8::Local<v8::Value> argv[argc] = {info[0]};
+        v8::Local<v8::Function> cons = Nan::New(constructor());
+        info.GetReturnValue().Set(Nan::NewInstance(cons, argc, argv).ToLocalChecked());
+    }
+}
 
-        AddEnvironmentCleanupHook(isolate, [](void *) {
-            constructor.Reset();
-        }, nullptr);
+void Transpiler::GetHandle(const Nan::FunctionCallbackInfo<v8::Value> &info) {
+    auto *obj = Nan::ObjectWrap::Unwrap<Transpiler>(info.Holder());
+    info.GetReturnValue().Set(obj->handle());
+}
 
+void Transpiler::Transpile(const Nan::FunctionCallbackInfo<v8::Value> &info) {
+    auto *isolate = info.GetIsolate();
+
+    auto *transpiler = Nan::ObjectWrap::Unwrap<Transpiler>(info.Holder());
+
+    auto *parser = new Parser(transpiler->m_dataCode);
+
+    try {
+        parser->parse();
+        info.GetReturnValue().Set(String::NewFromUtf8(isolate, Parser::JAVASCRIPT_CODE.c_str()));
+    } catch (std::exception &e) {
+        std::cerr << "Build failed !" << std::endl;
+        info.GetReturnValue().Set(String::NewFromUtf8(isolate, e.what()));
     }
 
-    void Transpiler::New(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    Parser::JAVASCRIPT_CODE = "";
 
-        auto *isolate = args.GetIsolate();
-        auto currentContext = isolate->GetCurrentContext();
+    delete parser;
+    delete transpiler;
+}
 
-        if (args.IsConstructCall()) {
-            auto dataCode = args[0]->IsUndefined() ? "" : std::string(*v8::String::Utf8Value(isolate, args[0]));
-            auto * transpiler = new Transpiler(dataCode);
-            transpiler->Wrap(args.This());
-            args.GetReturnValue().Set(args.This());
-        } else {
-            const int argc = 1;
-            Local<Value> argv[argc] = {args[0]};
-            auto cons = Local<Function>::New(isolate, constructor);
-            auto instance = cons->NewInstance(currentContext, argc, argv).ToLocalChecked();
-            args.GetReturnValue().Set(instance);
-        }
-    }
+Transpiler::~Transpiler() noexcept = default;
 
-    void Transpiler::NewInstance(const FunctionCallbackInfo<Value> &args) {
-        auto *isolate = args.GetIsolate();
-
-        const unsigned argc = 1;
-        Local<Value> argv[argc] = {args[0]};
-        auto cons = Local<Function>::New(isolate, constructor);
-        auto context = isolate->GetCurrentContext();
-        auto instance = cons->NewInstance(context, argc, argv).ToLocalChecked();
-
-        args.GetReturnValue().Set(instance);
-    }
-
-    void Transpiler::Parse(const v8::FunctionCallbackInfo<v8::Value> &args) {
-        auto * isolate = args.GetIsolate();
-
-        //MAIN GOES HERE
-
-        auto * transpiler = ObjectWrap::Unwrap<Transpiler>(args.Holder());
-
-
-
-        auto* parser = new Parser(transpiler->dataCode);
-
-        try {
-            parser->parse();
-            args.GetReturnValue().Set(String::NewFromUtf8(isolate, Parser::JAVASCRIPT_CODE.c_str()));
-        } catch (std::exception &e) {
-            std::cerr << "Build failed !" << std::endl;
-            args.GetReturnValue().Set(String::NewFromUtf8(isolate, e.what()));
-        }
-
-        Parser::JAVASCRIPT_CODE = "";
-
-        delete parser;
-        delete transpiler;
-    }
-
+inline Nan::Persistent<v8::Function> &Transpiler::constructor() {
+    static Nan::Persistent<v8::Function> my_constructor;
+    return my_constructor;
 }

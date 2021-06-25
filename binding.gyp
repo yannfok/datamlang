@@ -1,9 +1,11 @@
 {
   "targets": [
     {
-      "target_name": "dataTranspiler",
+      "include_dirs" : [
+        "<!(node -e \"require('nan')\")"
+      ],
+      "target_name": "DTMLTranspiler",
       "sources": [
-        "./src/dataTranspiler.cc",
         "./src/Transpiler.cc",
         "./src/Alias.cc",
         "./src/Aliases.cc",

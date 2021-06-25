@@ -1,6 +1,6 @@
 {
   "name": "datamlang",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "DataMLTranspiler.js",
   "scripts": {
@@ -16,5 +16,9 @@
   "gypfile": true,
   "devDependencies": {
     "mocha": "^9.0.1"
+  },
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "nan": "^2.14.2"
   }
 }

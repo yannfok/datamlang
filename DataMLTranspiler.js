@@ -1,4 +1,4 @@
-const createObject = require('./build/Release/dataTranspiler');
+const objectWrapper = require('bindings')('DTMLTranspiler');
 
 /**
  * Transpile the DataMLCode into a JavaScript source code
@@ -9,5 +9,5 @@ const createObject = require('./build/Release/dataTranspiler');
 
 module.exports = function DTMLTranspile(code)
 {
-    return createObject(code).transpile();
+    return objectWrapper.Transpiler(code).transpile();
 }
