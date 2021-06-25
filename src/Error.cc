@@ -17,7 +17,7 @@ struct ClosureSyntaxError : public std::exception
 struct ClosureCloseException : public std::exception
 {
     const char * what() const noexcept override{
-        return "Too many or not enough braces";
+        return "Error too many or not enough braces";
     }
 };
 
@@ -39,7 +39,7 @@ struct JSPrivateIdentifierError : public std::exception{
     std::string m_errorLine;
 
     explicit JSPrivateIdentifierError(std::string keyword){
-        this->m_errorLine = "Unable to use JS identifier : " + std::move(keyword);
+        this->m_errorLine = "Error Unable to use JS identifier : " + std::move(keyword);
     }
 
     const char * what() const noexcept override{
@@ -52,7 +52,7 @@ struct AliasUnknownError : public std::exception{
     std::string m_errorLine;
 
     explicit AliasUnknownError(std::string line){
-        this->m_errorLine = "Unknown Alias : " + std::move(line);
+        this->m_errorLine = "Error Unknown Alias : " + std::move(line);
     }
 
     const char * what() const noexcept override{
