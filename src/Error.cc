@@ -59,3 +59,11 @@ struct AliasUnknownError : public std::exception{
         return this->m_errorLine.c_str();
     }
 };
+
+struct EmptyGiveError : public std::exception{
+
+    const char * what() const noexcept override{
+        return "Custom feature function need to return a number";
+    }
+
+};

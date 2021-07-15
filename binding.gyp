@@ -15,6 +15,8 @@
         "./src/Loop.cc",
         "./src/Parser.cc",
         "./src/StringUtils.cc",
+        "./src/IfAndElifCondition.cc",
+        "./src/ElseCondition.cc"
       ],
        'cflags!': [ '-fno-exceptions' ],
        'cflags_cc!': [ '-fno-exceptions' ],

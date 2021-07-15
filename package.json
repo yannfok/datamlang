@@ -1,6 +1,6 @@
 {
   "name": "datamlang",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "",
   "main": "DataMLTranspiler.js",
   "scripts": {

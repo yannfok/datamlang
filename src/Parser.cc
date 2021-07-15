@@ -8,6 +8,8 @@
 #include "../include/Function.h"
 #include "../include/Loop.h"
 #include "../constants/Aliases.h"
+#include "../include/IfAndElifCondition.h"
+#include "../include/ElseCondition.h"
 #include <vector>
 
 
@@ -16,32 +18,50 @@
  */
 
 
+/**
+ * TODO
+ * Use better regular expression to prevent error
+ */
+
 std::map<std::string, KeyWord *> Parser::KEYWORDS = {
-        {"__DECLARE",                 new KeyWord(R"(^dec +[a-zA-Z-_]+ *= *[a-zA-Z0-9-.\->]+$)", {
+        {"__DECLARE",                 new KeyWord(R"(^dec [a-zA-Z-_]+ = [a-zA-Z0-9-.\->+\/* ]+$)", {
                 {"dec", "let"}
         },getAllAliases())},
-        {"__RETURN",                  new KeyWord(R"(^give [a-zA-Z-_.\->]+$|^give [0-9]+$)", {
+        {"__RETURN",                  new KeyWord(R"(^give [a-zA-Z0-9-_.\->+\/* ]+$)", {
                 {"give", "return"}
         },getAllAliases())},
         {"__MAIN_FUNC",               new Function("^f.[a-zA-Z-_]+$", {
                 {"f", "function"},
                 {".", " "},
         })},
-        {"__INCREMENTATION_OPERATOR", new KeyWord(R"(^[a-zA-Z-_]+ \+\= [0-9-.]+$|^[a-zA-Z-_]+ \+\= [a-zA-Z-_.\->]+$)", {
+        {"__INCREMENTATION_OPERATOR", new KeyWord(R"(^[a-zA-Z-_]+ \+\= [a-zA-Z0-9-.\->+\/* ]+$)", {
 
         },getAllAliases())},
-        {"__DECREMENTATION_OPERATOR", new KeyWord(R"(^[a-zA-Z-_]+ \-\= [0-9-.]+$|^[a-zA-Z-_]+ \-\= [a-zA-Z-_.\->]+$)", {
+        {"__DECREMENTATION_OPERATOR", new KeyWord(R"(^[a-zA-Z-_]+ \-\= [a-zA-Z0-9-.\->+\/* ]+$)", {
+
+        },getAllAliases())},
+        {"__DIVISION_OPERATOR",new KeyWord(R"(^[a-zA-Z-_]+ \/= [a-zA-Z0-9-.\->+\/* ]+$)",{
+
+        },getAllAliases())},
+        {"__MULTIPLICATION_OPERATOR",new KeyWord(R"(^[a-zA-Z-_]+ \*= [a-zA-Z0-9-.\->+\/* ]+$)",{
 
         },getAllAliases())},
         {"__LOOP",                    new Loop("^data->loop[ ]+[a-zA-Z-_]+$", {
 
         })},
-        {"__CONSTANT",                    new KeyWord(R"(^cst +[a-zA-Z-_]+ *= *[a-zA-Z0-9-.\->]+$)", {
+        {"__IF_ELIF_CONDITION",                    new IfAndElifCondition(R"(^if [a-zA-Z0-9-.\->+\/* <>=]+$|^elif [a-zA-Z0-9-.\->+\/* <>=]+$)", {
+
+        },getAllAliases())},
+        {"__ELSE_CONDITION", new ElseCondition(R"(^else$)", {
+
+        })},
+        {"__CONSTANT",                    new KeyWord(R"(^cst [a-zA-Z-_]+ = [a-zA-Z0-9-.\->+\/* ]+$)", {
                 {"cst","const"}
-        },getAllAliases())}
+        },getAllAliases())},
 };
 
 std::string Parser::JAVASCRIPT_CODE;
+bool Parser::hasReturned = false;
 
 Parser::Parser(std::string &srcCode) : currentPosition(0), m_srcCode(std::move(srcCode)) {
     checkBracesSyntax(this->m_srcCode);
@@ -56,6 +76,7 @@ void Parser::checkBracesSyntax(const std::string &srcCode) {
 
 void Parser::parse() {
     auto nextElementIndex = this->m_srcCode.find_first_of("{;", this->currentPosition);
+    unsigned int finalElement = 0;
     while (nextElementIndex != std::string::npos) {
         auto element = this->m_srcCode.substr(this->currentPosition, nextElementIndex - this->currentPosition);
         if (element.find('}') != std::string::npos) {
@@ -67,16 +88,22 @@ void Parser::parse() {
         auto index = 0;
         for (const auto &elem : Parser::KEYWORDS) {
             if (elem.second->checkValidity(element)) {
+                if (elem.first == "__RETURN")
+                    Parser::hasReturned = true;
                 Parser::JAVASCRIPT_CODE += elem.second->retrieveJSCodeLine(element);
                 break;
             }
             index++;
         }
         if (index == Parser::KEYWORDS.size()) throw SyntaxError(element);
-
+        finalElement = nextElementIndex;
         nextElementIndex = this->m_srcCode.find_first_of("{;", this->currentPosition);
+
     }
-    Parser::JAVASCRIPT_CODE += '}';
+    if(!Parser::hasReturned) throw EmptyGiveError();
+    auto finalCode = this->m_srcCode.substr(finalElement+1, this->m_srcCode.length());
+    StringUtils::trim(finalCode);
+    Parser::JAVASCRIPT_CODE += finalCode;
 }
 
 void Parser::checkKeyWordSecurityBreak(const std::string &srcCode) {
@@ -89,6 +116,4 @@ void Parser::checkKeyWordSecurityBreak(const std::string &srcCode) {
     }
 }
 
-Parser::~Parser() {
-
-}
+Parser::~Parser() = default;

@@ -23,6 +23,7 @@ private:
     unsigned int currentPosition;
     std::string m_srcCode;
     static std::map<std::string,KeyWord*> KEYWORDS;
+    static bool hasReturned;
 public:
     static std::string JAVASCRIPT_CODE;
 
